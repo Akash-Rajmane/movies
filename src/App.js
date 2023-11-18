@@ -13,22 +13,26 @@ function App() {
     setIsLoading(true);
     setError(null);
     try {
-      const response = await fetch('https://swapi.dev/api/films/');
+      const response = await fetch('https://movies-6cbe5-default-rtdb.firebaseio.com/movies.json');
       if (!response.ok) {
         throw new Error('Something went wrong!');
       }
 
       const data = await response.json();
 
-      const transformedMovies = data.results.map((movieData) => {
-        return {
-          id: movieData.episode_id,
-          title: movieData.title,
-          openingText: movieData.opening_crawl,
-          releaseDate: movieData.release_date,
-        };
-      });
-      setMovies(transformedMovies);
+      const loadedMovies = [];
+
+      for(let key in data){
+        loadedMovies.push({
+          id: key,
+          title: data[key].title,
+          openingText: data[key].openingText,
+          releaseDate: data[key].releaseDate
+        })
+      }
+
+      setMovies(loadedMovies);
+      
     } catch (error) {
       setError(error.message);
     }
@@ -39,14 +43,47 @@ function App() {
     fetchMoviesHandler();
   }, [fetchMoviesHandler]);
 
-  function addMovieHandler(movie) {
-    console.log(movie);
+  async function addMovieHandler(movie) {
+    const response = await fetch('https://movies-6cbe5-default-rtdb.firebaseio.com/movies.json',{
+      method:'POST',
+      body: JSON.stringify(movie),
+      headers:{
+        "Content-Type": "application/json"
+      }
+    })
+    const data = await response.json();
+    console.log(data);
+  }
+
+  async function deleteMovieHandler(id) {
+    setIsLoading(true);
+    setError(null);
+    
+    try {
+      const response = await fetch(`https://movies-6cbe5-default-rtdb.firebaseio.com/movies/${id}.json`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+  
+      if (!response.ok) {
+        throw new Error('Deleting movie failed!');
+      }
+  
+      // Update the local state to remove the deleted movie
+      setMovies((prevMovies) => prevMovies.filter((movie) => movie.id !== id));
+    } catch (error) {
+      setError(error.message);
+    }
+  
+    setIsLoading(false);
   }
 
   let content = <p>Found no movies.</p>;
 
   if (movies.length > 0) {
-    content = <MoviesList movies={movies} />;
+    content = <MoviesList movies={movies} deleteMovieHandler={deleteMovieHandler}/>;
   }
 
   if (error) {

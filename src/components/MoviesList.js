@@ -12,6 +12,8 @@ const MovieList = (props) => {
           title={movie.title}
           releaseDate={movie.releaseDate}
           openingText={movie.openingText}
+          id={movie.id}
+          deleteMovieHandler={props.deleteMovieHandler}
         />
       ))}
     </ul>
